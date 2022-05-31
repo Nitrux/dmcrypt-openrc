@@ -4,6 +4,6 @@
 
 /bin/cp /etc/init.d/{cryptdisks,cryptdisks-early} /etc/runlevels/boot || true
 
-#   Update services list
+#   Add dmcrypt service files to runlevel/boot
 
-rc-update -u
+rc-update add dmcrypt boot
