@@ -1,5 +1,11 @@
+dmcrypt-openrc (0.0.2)  nitrux; urgency=medium
+
+  * Remove file.
+
+ -- Uri Herrera <uri_herrera@nxos.org>  Tue, 31 May 2022 15:28:00 -0500
+
 dmcrypt-openrc (0.0.1)  nitrux; urgency=medium
 
-  * Create package
+  * Create package.
 
  -- Uri Herrera <uri_herrera@nxos.org>  Tue, 31 May 2022 13:57:00 -0500
