@@ -1,0 +1,5 @@
+#! /bin/bash
+
+#   Update services list
+
+rc-update -u
