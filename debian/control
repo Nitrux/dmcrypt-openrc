@@ -1,17 +1,17 @@
-Source: openrc-config
+Source: dmcrypt-openrc
 Section: misc
-Priority: required
+Priority: important
 Maintainer: Uri Herrera <uri_herrera@nxos.org>
 Build-Depends: debhelper (>=9)
 Standards-Version: 3.9.6
 Homepage: http://nxos.org
 
 
-Package: openrc-config
+Package: dmcrypt-openrc
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, openrc, sysvinit-utils
+Depends: ${shlibs:Depends}, ${misc:Depends}, openrc, dmsetup
 Conflicts: systemd, systemd-sysv
-Description: Package to add runlevel configuration for OpenRC.
- This package will add the boot scripts to the runlevel
- directories used by OpenRC to boot the system.
+Description: Package to add dmcrypt configuration for OpenRC.
+ This package will add the boot scripts to use dmcrypt
+ with OpenRC in Nitrux.
 
