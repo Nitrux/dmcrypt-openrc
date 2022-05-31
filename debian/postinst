@@ -7,3 +7,9 @@
 #   Add dmcrypt service files to runlevel/boot
 
 rc-update add dmcrypt boot
+rc-update add dmeventd boot
+rc-update add device-mapper boot
+
+#   Update services list
+
+rc-update -u

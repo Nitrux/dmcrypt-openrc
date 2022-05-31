@@ -1,3 +1,9 @@
+dmcrypt-openrc (0.0.6)  nitrux; urgency=medium
+
+  * Update debian scripts.
+
+ -- Uri Herrera <uri_herrera@nxos.org>  Tue, 31 May 2022 18:08:00 -0500
+
 dmcrypt-openrc (0.0.5)  nitrux; urgency=medium
 
   * Update debian scripts.
