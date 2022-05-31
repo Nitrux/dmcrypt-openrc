@@ -9,7 +9,7 @@ Homepage: http://nxos.org
 
 Package: dmcrypt-openrc
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, openrc, dmsetup
+Depends: ${shlibs:Depends}, ${misc:Depends}, openrc, dmsetup, cryptsetup, cryptsetup-initramfs
 Conflicts: systemd, systemd-sysv
 Description: Package to add dmcrypt configuration for OpenRC.
  This package will add the boot scripts to use dmcrypt
