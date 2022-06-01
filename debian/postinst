@@ -9,6 +9,7 @@
 rc-update add dmcrypt boot
 rc-update add dmeventd boot
 rc-update add device-mapper boot
+rc-update add cryptmount boot
 
 #   Update services list
 
