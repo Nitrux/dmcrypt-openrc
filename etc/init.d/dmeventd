@@ -3,7 +3,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 PIDFILE=/run/dmeventd.pid
-BIN=/usr/bin/dmeventd
+BIN=/sbin/dmeventd
 
 depend() {
 	# As of .67-r1, we call ALL lvm start/stop scripts with --sysinit, that
