@@ -1,4 +1,4 @@
-# Nitrux dmcrypt for OpenRC [![Build Status](https://travis-ci.org/Nitrux/dmcrypt-openrc.svg?branch=main)](https://travis-ci.org/Nitrux/dmcrypt-openrc)
+# Nitrux dmcrypt for OpenRC
 Service files and configuration files to use dmcrypt with Nitrux.
 
 # Issues
