@@ -1,0 +1,124 @@
+#!/sbin/openrc-run
+
+description="Setup encrypted filesystems/swap at boot"
+description_start="Starting cryptmount targets"
+description_stop="Stopping cryptmount targets"
+
+CM_EXE=/usr/bin/cryptmount
+DMPATH=/dev/mapper
+
+CM_BOOTDV=""
+CM_BOOTSW=""
+CM_BOOTFS=""
+
+depend() {
+    need localmount
+    after bootmisc
+    use logger
+}
+
+start_pre() {
+    # Check whether the executable is usable
+    test -x "${CM_EXE}" || return 5
+
+    # Read user-specified lists of filesystems to initialize
+    if [ -f /etc/default/cryptmount ]; then
+        . /etc/default/cryptmount
+    fi
+}
+
+configured() {
+    # Check if any of the targets needed at boot has been configured
+    for target in ${CM_BOOTDV} ${CM_BOOTFS} ${CM_BOOTSW}; do
+        if [ -b "${DMPATH}/${target}" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+dodevices() {
+    case "$1" in
+        start) test -z "${CM_BOOTDV}" || ${CM_EXE} --prepare ${CM_BOOTDV} ;;
+        stop)  test -z "${CM_BOOTDV}" || ${CM_EXE} --release ${CM_BOOTDV} ;;
+    esac
+}
+
+doswaps() {
+    case "$1" in
+        start) test -z "${CM_BOOTSW}" || ${CM_EXE} --swapon ${CM_BOOTSW} ;;
+        stop)  test -z "${CM_BOOTSW}" || ${CM_EXE} --swapoff ${CM_BOOTSW} ;;
+    esac
+}
+
+dofilesys() {
+    case "$1" in
+        start) test -z "${CM_BOOTFS}" || ${CM_EXE} --mount ${CM_BOOTFS} ;;
+        stop)  test -z "${CM_BOOTFS}" || ${CM_EXE} --unmount ${CM_BOOTFS} ;;
+    esac
+}
+
+doALL() {
+    if [ -n "${CM_BOOTDV}${CM_BOOTSW}${CM_BOOTFS}${CM_EARLYDV}" ]; then
+        ewarn "Using /etc/default/cryptmount is DEPRECATED - please use 'bootaction={mount|swap|prepare}' flags within /etc/cryptmount/cmtab"
+    fi
+
+    case "$1" in
+        start)
+            dodevices start
+            doswaps start
+            dofilesys start
+            ;;
+        stop)
+            dofilesys stop
+            doswaps stop
+            dodevices stop
+            ;;
+    esac
+}
+
+start() {
+    ebegin "${description_start}"
+    modprobe -q -a dm-mod dm-crypt || true
+
+    ${CM_EXE} --system-boot
+
+    if configured; then
+        ewarn "cryptmount auto-filesystems seem to be already configured"
+        eend 0
+    else
+        doALL start
+        eend $?
+    fi
+}
+
+stop() {
+    ebegin "${description_stop}"
+    ${CM_EXE} --system-shutdown
+
+    if configured; then
+        doALL stop
+    fi
+
+    ${CM_EXE} --safetynet || true
+    eend $?
+}
+
+status() {
+    if configured; then
+        einfo "cryptmount auto-filesystems are in use"
+        return 0
+    else
+        eerror "cryptmount auto-filesystems do not appear to be in use"
+        return 3
+    fi
+}
+
+restart() {
+    ebegin "Restarting cryptmount targets"
+    stop
+    local stop_rc=$?
+    start
+    local start_rc=$?
+    eend $((stop_rc + start_rc))
+}
