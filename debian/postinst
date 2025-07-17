@@ -1,12 +1,3 @@
 #!/usr/bin/env bash
 
-# -- Add dmcrypt service files to runlevel/boot.
-
-rc-update add dmcrypt-openrc boot
-rc-update add dmeventd-openrc boot
-rc-update add device-mapper-openrc boot
-rc-update add cryptmount-openrc boot
-
-# -- Update services list.
-
-rc-update -u
+exit 0

@@ -1,0 +1,44 @@
+#!/sbin/openrc-run
+# Copyright (c) 2007-2021 The Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+description="Manages encrypted filesystems and swap with cryptmount"
+command="/usr/bin/cryptmount"
+
+depend() {
+	# Needs local filesystems mounted to read /etc/cryptmount/cmtab
+	need localmount
+	# Should run after the device-mapper and crypto modules are ready
+	use dmcrypt
+}
+
+start_pre() {
+	# Ensure the main executable and config file are present
+	if [ ! -x "${command}" ]; then
+		eerror "${command} not found"
+		return 1
+	fi
+	if [ ! -f /etc/cryptmount/cmtab ]; then
+		eerror "/etc/cryptmount/cmtab not found"
+		return 1
+	fi
+	# Load necessary kernel modules
+	modprobe -q dm-crypt
+}
+
+start() {
+	ebegin "Mounting cryptmount targets"
+	# The --system-boot command intelligently mounts all targets
+	# configured with 'bootaction=mount' in /etc/cryptmount/cmtab
+	"${command}" --system-boot
+	eend $?
+}
+
+stop() {
+	ebegin "Unmounting cryptmount targets"
+	# The --system-shutdown command unmounts all managed targets
+	"${command}" --system-shutdown
+	# The --safetynet is a final check to release any remaining devices
+	"${command}" --safetynet
+	eend $?
+}

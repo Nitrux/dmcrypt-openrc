@@ -1,0 +1,74 @@
+#!/sbin/openrc-run
+# Copyright (c) 2007-2021 The Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+description="Sets up encrypted devices from /etc/crypttab"
+CRYPTTAB_FILE="/etc/crypttab"
+
+depend() {
+	# Needs the device-mapper service to be ready.
+	need device-mapper
+	# Must run before filesystems are checked or swap is enabled,
+	# as they may live on these encrypted devices.
+	before fsck localmount swap
+}
+
+start_pre() {
+	# Exit cleanly if there's no crypttab file.
+	[ -f "${CRYPTTAB_FILE}" ] || return 0
+	# Ensure the kernel module is loaded.
+	modprobe -q dm-crypt
+}
+
+start() {
+	[ ! -f "${CRYPTTAB_FILE}" ] && return 0
+	ebegin "Setting up encrypted devices from ${CRYPTTAB_FILE}"
+
+	local success=true
+	# Read crypttab, skipping comments and blank lines.
+	sed 's/#.*//g;/^$/d' "${CRYPTTAB_FILE}" | \
+	while read -r target source key_file options; do
+		# Skip malformed lines
+		[ -z "${target}" ] || [ -z "${source}" ] && continue
+
+		# Skip if already active
+		if cryptsetup status "${target}" >/dev/null 2>&1; then
+			veinfo "  ${target} is already active"
+			continue
+		fi
+
+		einfo "  Activating ${target}"
+
+		# Use "none" for interactive password prompt if key file is "-"
+		[ "${key_file}" = "-" ] && key_file="none"
+
+		# The --try-empty-password handles interactive prompts
+		if ! cryptsetup open --key-file "${key_file}" --try-empty-password ${options} "${source}" "${target}"; then
+			ewarn "    Failed to activate ${target}"
+			success=false
+		fi
+	done
+
+	if ! ${success}; then
+		eend 1 "One or more encrypted devices failed to start"
+	else
+		eend 0
+	fi
+}
+
+stop() {
+	[ ! -f "${CRYPTTAB_FILE}" ] && return 0
+	ebegin "Closing encrypted devices from ${CRYPTTAB_FILE}"
+
+	# Process in reverse order for a safe shutdown sequence.
+	tac "${CRYPTTAB_FILE}" | sed 's/#.*//g;/^$/d' | \
+	while read -r target _; do
+		[ -z "${target}" ] && continue
+
+		if cryptsetup status "${target}" >/dev/null 2>&1; then
+			einfo "  Deactivating ${target}"
+			cryptsetup close "${target}"
+		fi
+	done
+	eend 0
+}
