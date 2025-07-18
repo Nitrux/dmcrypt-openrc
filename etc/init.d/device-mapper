@@ -16,7 +16,7 @@ depend() {
 # Checks if a volume already exists in the DM table.
 _dmvolume_exists() {
 	[ -z "$1" ] && return 1
-	/usr/bin/dmsetup ls 2>/dev/null | grep -q "^$1[[:space:]]"
+	/usr/sbin/dmsetup ls 2>/dev/null | grep -q "^$1[[:space:]]"
 }
 
 # Gets a list of unique volume names from /etc/dmtab that do not already exist.
@@ -43,7 +43,7 @@ _build_dmsetup_command() {
 	local dm_table
 	dm_table=$(echo "${dmtab_lines}" | awk '{$1=""; print $0}' | sed 's/^ //')
 
-	echo "echo \"${dm_table}\" | /usr/bin/dmsetup create ${volume}"
+	echo "echo \"${dm_table}\" | /usr/sbin/dmsetup create ${volume}"
 }
 
 # --- Main Service Functions ---
@@ -55,8 +55,8 @@ start_pre() {
 	fi
 
 	# This script is useless without dmsetup or the dmtab file.
-	if [ ! -x /usr/bin/dmsetup ]; then
-		eerror "/usr/bin/dmsetup not found"
+	if [ ! -x /usr/sbin/dmsetup ]; then
+		eerror "/usr/sbin/dmsetup not found"
 		return 1
 	fi
 	if [ ! -f /etc/dmtab ]; then
