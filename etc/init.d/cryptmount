@@ -1,42 +1,35 @@
 #!/sbin/openrc-run
 
 description="Manages encrypted filesystems and swap with cryptmount"
-command="/usr/bin/cryptmount"
 
 depend() {
-	# Needs local filesystems mounted to read /etc/cryptmount/cmtab
 	need localmount
-	# Should run after the device-mapper and crypto modules are ready
-	use dmcrypt
+	use crypttab
+	provide cryptmount
 }
 
 start_pre() {
-	# Ensure the main executable and config file are present
-	if [ ! -x "${command}" ]; then
-		eerror "${command} not found"
+	if [ ! -x /usr/bin/cryptmount ]; then
+		eerror "/usr/bin/cryptmount not found"
 		return 1
 	fi
 	if [ ! -f /etc/cryptmount/cmtab ]; then
 		eerror "/etc/cryptmount/cmtab not found"
 		return 1
 	fi
-	# Load necessary kernel modules
+
 	modprobe -q dm-crypt
 }
 
 start() {
 	ebegin "Mounting cryptmount targets"
-	# The --system-boot command intelligently mounts all targets
-	# configured with 'bootaction=mount' in /etc/cryptmount/cmtab
-	"${command}" --system-boot
+	/usr/bin/cryptmount --system-boot
 	eend $?
 }
 
 stop() {
 	ebegin "Unmounting cryptmount targets"
-	# The --system-shutdown command unmounts all managed targets
-	"${command}" --system-shutdown
-	# The --safetynet is a final check to release any remaining devices
-	"${command}" --safetynet
+	/usr/bin/cryptmount --system-shutdown
+	/usr/bin/cryptmount --safetynet
 	eend $?
 }

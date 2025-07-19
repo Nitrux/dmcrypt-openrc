@@ -3,56 +3,36 @@
 description="Sets up Device Mapper volumes from /etc/dmtab"
 
 depend() {
-	# Needs kernel modules to be loaded.
 	need modules
-	# Must run before dmeventd and before filesystems are checked.
 	before dmeventd fsck
+	provide dmsetup
 }
 
-# --- Helper Functions (logic preserved from original script) ---
-
-# Checks if a volume already exists in the DM table.
 _dmvolume_exists() {
 	[ -z "$1" ] && return 1
 	/usr/sbin/dmsetup ls 2>/dev/null | grep -q "^$1[[:space:]]"
 }
 
-# Gets a list of unique volume names from /etc/dmtab that do not already exist.
 _get_new_dm_volumes() {
 	grep -v -e '^[[:space:]]*\(#\|$\)' /etc/dmtab | \
-	awk '{ print $1 }' | \
-	uniq | \
-	while read -r volume; do
+	awk '{ print $1 }' | uniq | \
+	while IFS= read -r volume; do
 		_dmvolume_exists "${volume}" || echo "${volume}"
 	done
 }
 
-# Builds the full dmsetup command for a given volume from /etc/dmtab.
-_build_dmsetup_command() {
+_build_dmsetup_table() {
 	local volume=$1
-	local dmtab_lines
-	dmtab_lines=$(grep -v -e '^[[:space:]]*\(#\|$\)' /etc/dmtab | grep "^${volume}[[:space:]]")
-
-	if [ -z "${dmtab_lines}" ]; then
-		return 1
-	fi
-
-	# Create a multi-line table for dmsetup to read from stdin
-	local dm_table
-	dm_table=$(echo "${dmtab_lines}" | awk '{$1=""; print $0}' | sed 's/^ //')
-
-	echo "echo \"${dm_table}\" | /usr/sbin/dmsetup create ${volume}"
+	grep -v -e '^[[:space:]]*\(#\|$\)' /etc/dmtab | \
+		grep "^${volume}[[:space:]]" | \
+		awk '{$1=""; print substr($0,2)}'
 }
 
-# --- Main Service Functions ---
-
 start_pre() {
-	# Load the device-mapper kernel module if it's not already loaded.
 	if ! grep -qs 'device-mapper' /proc/devices; then
 		modprobe dm-mod
 	fi
 
-	# This script is useless without dmsetup or the dmtab file.
 	if [ ! -x /usr/sbin/dmsetup ]; then
 		eerror "/usr/sbin/dmsetup not found"
 		return 1
@@ -74,20 +54,14 @@ start() {
 		return 0
 	fi
 
-	local volume dmsetup_cmd
+	local volume dm_table
 	for volume in ${volumes_to_create}; do
 		einfo "  Creating volume: ${volume}"
-		dmsetup_cmd=$(_build_dmsetup_command "${volume}")
-		if ! eval "${dmsetup_cmd}"; then
+		dm_table=$(_build_dmsetup_table "${volume}")
+		if ! echo "${dm_table}" | /usr/sbin/dmsetup create "${volume}"; then
 			ewarn "    Failed to create volume ${volume}"
 		fi
 	done
 
 	eend 0
-}
-
-stop() {
-	# This is a one-shot setup script. Teardown of DM volumes should be
-	# handled by higher-level services (like umountfs, lvm, cryptsetup).
-	return 0
 }

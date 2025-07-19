@@ -2,9 +2,8 @@
 
 description="Starts the Device Mapper event daemon (dmeventd)"
 command="/usr/sbin/dmeventd"
-pidfile="/run/dmeventd.pid"
+supervisor=supervise-daemon
 
 depend() {
-	# Should start after lvm and device-mapper are ready.
-	after lvm device-mapper
+	after lvm dmsetup
 }
