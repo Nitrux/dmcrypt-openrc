@@ -16,38 +16,46 @@ start_pre() {
 }
 
 start() {
-	[ ! -f "${CRYPTTAB_FILE}" ] && return 0
-	ebegin "Setting up encrypted devices from ${CRYPTTAB_FILE}"
+    [ ! -f "${CRYPTTAB_FILE}" ] && return 0
+    ebegin "Setting up encrypted devices from ${CRYPTTAB_FILE}"
 
-	local success=0
+    local fail_marker="/tmp/.crypttab.fail.$$"
+    rm -f "${fail_marker}"
 
-	while IFS= read -r target source key_file options; do
-		[ -z "${target}" ] || [ -z "${source}" ] && continue
+    sed 's/#.*//;/^$/d' "${CRYPTTAB_FILE}" | \
+    while IFS= read -r target source key_file options; do
+        [ -z "${target}" ] || [ -z "${source}" ] && continue
 
-		if cryptsetup status "${target}" >/dev/null 2>&1; then
-			veinfo "  ${target} is already active"
-			continue
-		fi
+        if cryptsetup status "${target}" >/dev/null 2>&1; then
+            veinfo "  ${target} is already active"
+            continue
+        fi
 
-		einfo "  Activating ${target}"
+        einfo "  Activating ${target}"
 
-		[ "${key_file}" = "-" ] && key_file="none"
+        [ "${key_file}" = "-" ] && key_file="none"
 
-		if [ -n "${options}" ]; then
-			# shellcheck disable=SC2086
-			set -- $options
-		else
-			set --
-		fi
+        if [ -n "${options}" ]; then
+            # shellcheck disable=SC2086
+            set -- $options
+        else
+            set --
+        fi
 
-		if ! cryptsetup open --key-file "${key_file}" --try-empty-password "$@" "${source}" "${target}"; then
-			ewarn "    Failed to activate ${target}"
-			success=1
-		fi
-	done < <(sed 's/#.*//;/^$/d' "${CRYPTTAB_FILE}")
+        if ! cryptsetup open --key-file "${key_file}" --try-empty-password "$@" "${source}" "${target}"; then
+            ewarn "    Failed to activate ${target}"
+            touch "${fail_marker}"
+        fi
+    done
 
-	eend ${success}
-	return ${success}
+    if [ -f "${fail_marker}" ]; then
+        rm -f "${fail_marker}"
+        eend 1 "One or more encrypted devices failed to start"
+        return 1
+    else
+        eend 0
+        return 0
+    fi
 }
 
 stop() {

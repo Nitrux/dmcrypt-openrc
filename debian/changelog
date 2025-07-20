@@ -1,3 +1,9 @@
+dmcrypt-openrc (0.1.8)  nitrux; urgency=medium
+
+  * Fix syntax error in dmcryupt services.
+
+ -- Uri Herrera <uri_herrera@nxos.org>  Sun, 20 Jul 2025 05:17:00 -0500
+
 dmcrypt-openrc (0.1.7)  nitrux; urgency=medium
 
   * Cleaunp services.
