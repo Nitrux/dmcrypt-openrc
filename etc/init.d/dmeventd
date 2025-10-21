@@ -2,6 +2,7 @@
 
 description="Starts the Device Mapper event daemon (dmeventd)"
 command="/usr/sbin/dmeventd"
+command_args="-f"
 supervisor=supervise-daemon
 
 depend() {

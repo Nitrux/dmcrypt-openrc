@@ -1,6 +1,12 @@
+dmcrypt-openrc (0.1.9)  nitrux; urgency=medium
+
+  * Ensure dmeventd runs in the foreground.
+
+ -- Uri Herrera <uri_herrera@nxos.org>  Mon, 20 Oct 2025 23:39:00 -0500
+
 dmcrypt-openrc (0.1.8)  nitrux; urgency=medium
 
-  * Fix syntax error in dmcryupt services.
+  * Fix syntax error in dmcryut services.
 
  -- Uri Herrera <uri_herrera@nxos.org>  Sun, 20 Jul 2025 05:17:00 -0500
 
